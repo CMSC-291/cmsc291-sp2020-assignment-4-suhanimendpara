@@ -18,7 +18,7 @@ class IndexView(generic.ListView):
         """
         return Question.objects.filter(
             pub_date__lte=timezone.now()
-        ).order_by('-pub_date')[:5]
+        ).order_by('-pub_date')
 
 class DetailView(generic.DetailView):
     model = Question
@@ -34,6 +34,18 @@ class DetailView(generic.DetailView):
 class ResultsView(generic.DetailView):
     model = Question
     template_name = 'polls/results.html'
+
+def add_question(request):
+    question_text = request.POST['question_text']
+    question = Question(question_text=question_text, pub_date=timezone.now())
+    question.save()
+    return HttpResponseRedirect(reverse('polls:index'))
+
+def delete_question(request, question_id):
+    question = get_object_or_404(Question, pk=question.id)
+    if request.value == "Delete":
+        question.delete()
+    return HttpResponseRedirect(reverse('polls:index'))
 
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
@@ -52,3 +64,18 @@ def vote(request, question_id):
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
         return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+
+
+def add_choice(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    choice_text = request.POST['choice_text']
+    choice = Choice(question=question, choice_text=choice_text)
+    choice.save()
+    return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+
+def delete_choice(request, choice_id):
+    choice = get_object_or_404(Choice, pk=choice_id)
+    question = get_object_or_404(Question, pk=choice.question.id)
+    if request.method == "POST":
+        choice.delete()
+    return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
